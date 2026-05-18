@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Family Gallery</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f7f3ee;--surface:#fff;--border:#e8e0d5;--accent:#c17b3f;--text:#1a1410;--muted:#8a7968;--green:#2d7a5f;--red:#e74c3c;--shadow:0 4px 24px rgba(0,0,0,0.08);}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow:hidden;}
+
+/* AUTH */
+.auth-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;background:linear-gradient(135deg,#f7f3ee,#fdf8f3);overflow-y:auto;z-index:999;}
+.auth-logo{font-family:'Playfair Display',serif;font-weight:900;font-size:2.8rem;color:var(--accent);margin-bottom:0.2rem;text-align:center;}
+.auth-logo span{color:var(--text);}
+.auth-tagline{color:var(--muted);font-size:0.88rem;margin-bottom:2rem;text-align:center;}
+.auth-card{background:var(--surface);border-radius:24px;border:1px solid var(--border);padding:2rem 1.5rem;box-shadow:0 8px 40px rgba(0,0,0,0.1);width:100%;max-width:380px;}
+.auth-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;text-align:center;}
+.auth-sub{color:var(--muted);font-size:0.82rem;text-align:center;margin-bottom:1.5rem;}
+.input-label{font-size:0.78rem;font-weight:600;color:var(--muted);margin-bottom:0.4rem;display:block;}
+.input-field{width:100%;padding:0.9rem 1rem;border:1.5px solid var(--border);border-radius:12px;font-size:1rem;font-family:'Outfit',sans-serif;margin-bottom:1rem;outline:none;transition:border 0.2s;}
+.input-field:focus{border-color:var(--accent);}
+.btn-main{display:block;background:var(--accent);color:white;padding:0.9rem;border-radius:50px;font-weight:600;font-size:1rem;cursor:pointer;border:none;font-family:'Outfit',sans-serif;width:100%;text-align:center;transition:all 0.2s;box-shadow:0 4px 16px rgba(193,123,63,0.3);}
+.btn-main:hover{background:#9a5f28;}
+.error-box{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:0.7rem 1rem;color:var(--red);font-size:0.82rem;margin-bottom:1rem;display:none;}
+.success-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:0.7rem 1rem;color:#16a34a;font-size:0.82rem;margin-bottom:1rem;display:none;}
+.auth-switch{text-align:center;margin-top:1rem;color:var(--muted);font-size:0.85rem;}
+.auth-switch a{color:var(--accent);cursor:pointer;font-weight:600;text-decoration:none;}
+.forgot-link{text-align:right;margin-top:-0.5rem;margin-bottom:1rem;}
+.forgot-link a{color:var(--accent);font-size:0.8rem;cursor:pointer;font-weight:500;}
+
+/* APP */
+#appScreen{display:none;}
+header{position:sticky;top:0;z-index:100;background:rgba(247,243,238,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Playfair Display',serif;font-weight:900;font-size:1.4rem;color:var(--accent);}
+.logo span{color:var(--text);}
+.user-chip{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:0.35rem 0.8rem;font-size:0.78rem;font-weight:500;display:flex;align-items:center;gap:0.4rem;cursor:pointer;}
+main{padding:1.2rem;max-width:700px;margin:0 auto;padding-bottom:5rem;}
+.tabs{display:flex;background:var(--surface);border-radius:14px;padding:4px;margin-bottom:1.5rem;border:1px solid var(--border);box-shadow:var(--shadow);}
+.tab{flex:1;padding:0.6rem 0.3rem;text-align:center;border-radius:10px;cursor:pointer;font-weight:500;font-size:0.75rem;transition:all 0.25s;color:var(--muted);}
+.tab.active{background:var(--accent);color:white;}
+.page{display:none;}.page.active{display:block;}
+.section-label{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
+.count-pill{background:var(--border);color:var(--muted);padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;}
+.photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+.photo-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);transition:transform 0.3s;animation:cardIn 0.4s ease backwards;}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.photo-card:hover{transform:translateY(-3px);}
+.photo-img{width:100%;height:150px;object-fit:cover;display:block;cursor:pointer;}
+.photo-bottom{padding:0.7rem;}
+.photo-name{font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0.3rem;}
+.photo-meta{color:var(--muted);font-size:0.7rem;margin-bottom:0.5rem;}
+.person-badge{display:inline-block;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.68rem;font-weight:600;margin-bottom:0.4rem;}
+.result-banner{border-radius:16px;padding:1rem 1.2rem;color:white;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
+.download-all-btn{display:block;background:var(--green);color:white;padding:0.8rem;border-radius:12px;text-align:center;font-weight:600;cursor:pointer;border:none;font-family:'Outfit',sans-serif;margin-bottom:1rem;width:100%;}
+.select-field{width:100%;padding:0.9rem 1rem;border:1.5px solid var(--border);border-radius:12px;font-size:1rem;font-family:'Outfit',sans-serif;margin-bottom:0.8rem;outline:none;background:white;}
+.upload-zone{border:2px dashed var(--border);border-radius:20px;padding:2rem 1.5rem;text-align:center;cursor:pointer;background:var(--surface);margin-bottom:1rem;box-shadow:var(--shadow);}
+#fileInput{display:none;}
+.progress-bar{display:none;background:var(--border);border-radius:10px;height:6px;margin-bottom:1rem;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#e8a05a);border-radius:10px;width:0%;transition:width 0.3s;}
+.qr-card{background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:1.2rem;margin-bottom:1.2rem;box-shadow:var(--shadow);display:flex;align-items:center;gap:1.2rem;}
+.qr-box{background:white;border-radius:12px;padding:8px;border:1px solid var(--border);flex-shrink:0;width:90px;height:90px;display:flex;align-items:center;justify-content:center;}
+.qr-box canvas,.qr-box img{width:74px!important;height:74px!important;}
+.btn-sm{padding:0.4rem 1rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;font-family:'Outfit',sans-serif;}
+.btn-accent{background:var(--accent);color:white;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+.loading{text-align:center;padding:2rem;color:var(--muted);}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
+.empty .em{font-size:2.5rem;display:block;margin-bottom:0.8rem;}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--text);color:white;padding:0.7rem 1.4rem;border-radius:50px;font-size:0.85rem;font-weight:500;z-index:2000;white-space:nowrap;animation:toastIn 0.3s ease;max-width:90vw;}
+@keyframes toastIn{from{transform:translateX(-50%) translateY(16px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.fab{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--accent);color:white;width:56px;height:56px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;border:none;box-shadow:0 6px 24px rgba(193,123,63,0.5);z-index:500;}
+.modal{position:fixed;inset:0;z-index:1000;background:rgba(20,15,10,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal-box{background:var(--surface);border-radius:20px;max-width:480px;width:100%;overflow:hidden;}
+.modal-img{width:100%;max-height:55vh;object-fit:contain;display:block;background:var(--bg);}
+.modal-footer{padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:var(--border);border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;}
+@media(max-width:400px){.photo-grid{grid-template-columns:1fr;}.qr-card{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="auth-screen">
+  <div class="auth-logo">Family<span>Gallery</span></div>
+  <div class="auth-tagline">📸 Apni family ki photos ek jagah</div>
+  <div class="auth-card">
+    <div class="auth-title">Login Karo 👋</div>
+    <div class="auth-sub">Apni email aur password se login karo</div>
+    <div class="error-box" id="loginError"></div>
+    <label class="input-label">Email ID</label>
+    <input type="email" class="input-field" id="loginEmail" placeholder="example@gmail.com">
+    <label class="input-label">Password</label>
+    <input type="password" class="input-field" id="loginPassword" placeholder="Password daalo..." onkeydown="if(event.key==='Enter')doLogin()" style="margin-bottom:0.3rem;">
+    <div class="forgot-link"><a onclick="showForgot()">Forgot Password?</a></div>
+    <button class="btn-main" onclick="doLogin()">🔑 Login Karo</button>
+    <div class="auth-switch">Pehli baar? <a onclick="showSignup()">Sign Up Karo</a></div>
+    <div class="auth-switch" style="margin-top:0.5rem"><a onclick="showAdminLogin()">Admin Login →</a></div>
+  </div>
+</div>
+
+<!-- SIGNUP -->
+<div id="signupScreen" class="auth-screen" style="display:none">
+  <div class="auth-logo">Family<span>Gallery</span></div>
+  <div class="auth-tagline">📸 Naya account banao</div>
+  <div class="auth-card">
+    <div class="auth-title">Sign Up 🎉</div>
+    <div class="auth-sub">Apni details bharo aur account banao</div>
+    <div class="error-box" id="signupError"></div>
+    <div class="success-box" id="signupSuccess"></div>
+    <label class="input-label">Apna Naam</label>
+    <select class="select-field" id="signupName" style="margin-bottom:1rem;">
+      <option value="">-- Naam chunno --</option>
+      <option>Dishita</option><option>Meet</option><option>Hetvi</option>
+      <option>Vivek</option><option>Jeet</option><option>Dhruvi</option>
+      <option>Avani</option><option>Prit</option><option>Aayush</option><option>Radhika</option>
+    </select>
+    <label class="input-label">Email ID</label>
+    <input type="email" class="input-field" id="signupEmail" placeholder="example@gmail.com">
+    <label class="input-label">Password banao</label>
+    <input type="password" class="input-field" id="signupPassword" placeholder="Minimum 6 characters...">
+    <label class="input-label">Password Confirm karo</label>
+    <input type="password" class="input-field" id="signupConfirm" placeholder="Dobara likho..." onkeydown="if(event.key==='Enter')doSignup()">
+    <button class="btn-main" onclick="doSignup()">✅ Account Banao</button>
+    <div class="auth-switch">Already account hai? <a onclick="showLogin()">Login Karo</a></div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD -->
+<div id="forgotScreen" class="auth-screen" style="display:none">
+  <div class="auth-logo">Family<span>Gallery</span></div>
+  <div class="auth-card">
+    <div class="auth-title">Password Reset 🔑</div>
+    <div class="auth-sub">Apni email daalo — naya password set karo</div>
+    <div class="error-box" id="forgotError"></div>
+    <div class="success-box" id="forgotSuccess"></div>
+    <label class="input-label">Email ID</label>
+    <input type="email" class="input-field" id="forgotEmail" placeholder="example@gmail.com">
+    <label class="input-label">Naya Password</label>
+    <input type="password" class="input-field" id="forgotNewPwd" placeholder="Naya password...">
+    <label class="input-label">Confirm Password</label>
+    <input type="password" class="input-field" id="forgotConfirm" placeholder="Dobara likho..." onkeydown="if(event.key==='Enter')doForgot()">
+    <button class="btn-main" onclick="doForgot()">✅ Password Reset Karo</button>
+    <div class="auth-switch"><a onclick="showLogin()">← Login par wapas jao</a></div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLoginScreen" class="auth-screen" style="display:none">
+  <div class="auth-logo">Family<span>Gallery</span></div>
+  <div class="auth-card">
+    <div class="auth-title">Admin Login 🔐</div>
+    <div class="auth-sub">Sirf Jeet ke liye</div>
+    <div class="error-box" id="adminError"></div>
+    <label class="input-label">Admin Password</label>
+    <input type="password" class="input-field" id="adminPassword" placeholder="Password..." onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <button class="btn-main" onclick="doAdminLogin()">Login</button>
+    <div class="auth-switch"><a onclick="showLogin()">← Wapas</a></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" style="display:none">
+  <header>
+    <div class="logo">Family<span>Gallery</span></div>
+    <div class="user-chip" onclick="logout()">
+      <span id="userAvatarEmoji">👤</span>
+      <span id="userName">User</span>
+      <span style="color:var(--muted);font-size:0.7rem;">↗</span>
+    </div>
+  </header>
+  <main>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('myphotos')">👤 My Photos</div>
+      <div class="tab" onclick="switchTab('gallery')">🖼️ Gallery</div>
+      <div class="tab" onclick="switchTab('upload')" id="uploadTab" style="display:none">📤 Upload</div>
+    </div>
+
+    <!-- MY PHOTOS -->
+    <div class="page active" id="myphotosPage">
+      <div id="myPhotosLoading" class="loading"><div class="spinner"></div></div>
+      <div id="myPhotosContent" style="display:none">
+        <div class="result-banner" id="myBanner">
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;" id="myBannerTitle"></div>
+            <div style="font-size:0.8rem;opacity:0.9;" id="myBannerSub"></div>
+          </div>
+          <span style="font-size:2rem;" id="myBannerAvatar"></span>
+        </div>
+        <button class="download-all-btn" id="downloadAllBtn" onclick="downloadAll()" style="display:none">⬇ Saari Photos Download Karo</button>
+        <div class="photo-grid" id="myGrid"></div>
+      </div>
+    </div>
+
+    <!-- GALLERY -->
+    <div class="page" id="galleryPage">
+      <div class="section-label">📸 All Photos <span class="count-pill" id="galleryCount">0</span></div>
+      <div id="galleryLoading" class="loading"><div class="spinner"></div></div>
+      <div class="photo-grid" id="publicGrid"></div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="page" id="uploadPage">
+      <div style="background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:1.2rem;margin-bottom:1rem;box-shadow:var(--shadow);">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:0.8rem;">👤 Person Select Karo</div>
+        <select class="select-field" id="personSelect">
+          <option value="">-- Person chunno --</option>
+          <option>Dishita</option><option>Meet</option><option>Hetvi</option>
+          <option>Vivek</option><option>Jeet</option><option>Dhruvi</option>
+          <option>Avani</option><option>Prit</option><option>Aayush</option><option>Radhika</option>
+        </select>
+      </div>
+      <div class="upload-zone" id="uploadZone">
+        <div style="font-size:2.5rem;margin-bottom:0.6rem;">📸</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:0.4rem;">Photos Upload Karo</div>
+        <div style="color:var(--muted);font-size:0.8rem;margin-bottom:1rem;">Pehle person chunno phir photos select karo</div>
+        <label class="btn-main" for="fileInput" style="display:inline-block;width:auto;padding:0.7rem 1.5rem;">Photos Choose Karo</label>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+      </div>
+      <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="qr-card">
+        <div class="qr-box" id="galleryQRBox"></div>
+        <div style="flex:1">
+          <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;margin-bottom:0.3rem;">🔲 Family ko Share Karo</div>
+          <div style="color:var(--muted);font-size:0.75rem;margin-bottom:0.7rem;">Yeh QR bhejo sabko!</div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn-sm btn-accent" onclick="downloadGalleryQR()">⬇ QR</button>
+            <button class="btn-sm btn-outline" onclick="copyAppLink(this)">🔗 Link</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-label">Photos <span class="count-pill" id="uploadCount">0</span></div>
+      <div class="photo-grid" id="uploadGrid"><div class="empty" style="grid-column:1/-1"><span class="em">🌅</span><p>Koi photo nahi</p></div></div>
+    </div>
+  </main>
+  <label class="fab" for="fileInput" id="fab">+</label>
+</div>
+
+<div class="modal" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <img class="modal-img" id="modalImg" src="" alt="">
+    <div class="modal-footer">
+      <div><div style="font-family:'Playfair Display',serif;font-weight:700;" id="modalName"></div><div style="color:var(--muted);font-size:0.73rem;margin-top:0.2rem;" id="modalMeta"></div></div>
+      <div style="display:flex;gap:0.5rem;">
+        <a id="modalDl" href="#" download style="background:var(--green);color:white;padding:0.4rem 0.8rem;border-radius:8px;font-size:0.78rem;font-weight:600;text-decoration:none;">⬇</a>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLOUD_NAME='dimdpw7by',UPLOAD_PRESET='Photo_app',ADMIN_PWD='Jeet@2026';
+const APP_URL=location.href.split('?')[0];
+const BIN_ID='6a094b3aadc21f119ab0ac79';
+const BIN_KEY='$2a$10$rkLj4UTW5//lbrJflQJ0BeYyGensc/uDebaYczdFXXUvLpGd0q2PW';
+const BIN_URL=`https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+const FAMILY=['Dishita','Meet','Hetvi','Vivek','Jeet','Dhruvi','Avani','Prit','Aayush','Radhika'];
+const AVATARS={Dishita:'👩',Meet:'👦',Hetvi:'👧',Vivek:'👨',Jeet:'🧑',Dhruvi:'👩',Avani:'👩',Prit:'👦',Aayush:'👦',Radhika:'👩'};
+const COLORS=['#e74c3c','#3498db','#9b59b6','#e67e22','#27ae60','#e91e63','#00bcd4','#ff9800','#607d8b','#795548'];
+
+let photos=[],currentUser=null,currentName=null,isAdmin=false,galleryQRMade=false,myPhotos=[];
+
+function getAccounts(){try{return JSON.parse(localStorage.getItem('fg_accounts_v2')||'{}')}catch{return{}}}
+function saveAccounts(a){localStorage.setItem('fg_accounts_v2',JSON.stringify(a))}
+function getSession(){try{return JSON.parse(localStorage.getItem('fg_session_v2')||'null')}catch{return null}}
+function saveSession(s){localStorage.setItem('fg_session_v2',JSON.stringify(s))}
+function clearSession(){localStorage.removeItem('fg_session_v2')}
+
+function hideAll(){['loginScreen','signupScreen','forgotScreen','adminLoginScreen'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});}
+function showLogin(){hideAll();document.getElementById('loginScreen').style.display='flex';}
+function showSignup(){hideAll();document.getElementById('signupScreen').style.display='flex';}
+function showForgot(){hideAll();document.getElementById('forgotScreen').style.display='flex';}
+function showAdminLogin(){hideAll();document.getElementById('adminLoginScreen').style.display='flex';}
+
+// ── LOGIN ──
+function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pwd=document.getElementById('loginPassword').value;
+  const err=document.getElementById('loginError');
+  if(!email){err.textContent='Email daalo!';err.style.display='block';return;}
+  if(!pwd){err.textContent='Password daalo!';err.style.display='block';return;}
+  const accounts=getAccounts();
+  if(!accounts[email]){err.textContent='Account nahi mila — pehle Sign Up karo!';err.style.display='block';return;}
+  if(accounts[email].password!==pwd){err.textContent='❌ Wrong password!';err.style.display='block';return;}
+  err.style.display='none';
+  saveSession({email,name:accounts[email].name,isAdmin:false});
+  startApp(accounts[email].name,false);
+}
+
+// ── SIGNUP ──
+function doSignup(){
+  const name=document.getElementById('signupName').value;
+  const email=document.getElementById('signupEmail').value.trim().toLowerCase();
+  const pwd=document.getElementById('signupPassword').value;
+  const conf=document.getElementById('signupConfirm').value;
+  const err=document.getElementById('signupError');
+  const suc=document.getElementById('signupSuccess');
+  if(!name){err.textContent='Apna naam chunno!';err.style.display='block';return;}
+  if(!email||!email.includes('@')){err.textContent='Sahi email daalo!';err.style.display='block';return;}
+  if(pwd.length<6){err.textContent='Password 6+ characters ka hona chahiye!';err.style.display='block';return;}
+  if(pwd!==conf){err.textContent='Passwords match nahi kar rahe!';err.style.display='block';return;}
+  const accounts=getAccounts();
+  if(accounts[email]){err.textContent='Yeh email already registered hai — Login karo!';err.style.display='block';return;}
+  accounts[email]={name,password:pwd};
+  saveAccounts(accounts);
+  err.style.display='none';
+  suc.textContent='✅ Account ban gaya! Login karo.';
+  suc.style.display='block';
+  setTimeout(()=>showLogin(),1500);
+}
+
+// ── FORGOT PASSWORD ──
+function doForgot(){
+  const email=document.getElementById('forgotEmail').value.trim().toLowerCase();
+  const newPwd=document.getElementById('forgotNewPwd').value;
+  const conf=document.getElementById('forgotConfirm').value;
+  const err=document.getElementById('forgotError');
+  const suc=document.getElementById('forgotSuccess');
+  if(!email){err.textContent='Email daalo!';err.style.display='block';return;}
+  if(newPwd.length<6){err.textContent='Password 6+ characters ka hona chahiye!';err.style.display='block';return;}
+  if(newPwd!==conf){err.textContent='Passwords match nahi kar rahe!';err.style.display='block';return;}
+  const accounts=getAccounts();
+  if(!accounts[email]){err.textContent='Yeh email registered nahi hai!';err.style.display='block';return;}
+  accounts[email].password=newPwd;
+  saveAccounts(accounts);
+  err.style.display='none';
+  suc.textContent='✅ Password reset ho gaya! Login karo.';
+  suc.style.display='block';
+  setTimeout(()=>showLogin(),1500);
+}
+
+// ── ADMIN LOGIN ──
+function doAdminLogin(){
+  const pwd=document.getElementById('adminPassword').value;
+  const err=document.getElementById('adminError');
+  if(pwd!==ADMIN_PWD){err.textContent='❌ Wrong password!';err.style.display='block';return;}
+  err.style.display='none';
+  saveSession({name:'Jeet',isAdmin:true});
+  startApp('Jeet',true);
+}
+
+// ── START APP ──
+async function startApp(name,admin){
+  currentName=name;isAdmin=admin;
+  hideAll();
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('userAvatarEmoji').textContent=AVATARS[name]||'👤';
+  document.getElementById('userName').textContent=name;
+  if(admin)document.getElementById('uploadTab').style.display='block';
+  if(!galleryQRMade){new QRCode(document.getElementById('galleryQRBox'),{text:APP_URL,width:74,height:74,colorDark:'#1a1410',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});galleryQRMade=true;}
+  photos=await loadFromCloud();
+  renderMyPhotos();
+  document.getElementById('galleryLoading').style.display='none';
+  renderPublicGallery();
+  if(admin)renderUploadGrid();
+}
+
+function logout(){if(!confirm('Logout karna chahte ho?'))return;clearSession();currentName=null;isAdmin=false;showLogin();}
+
+// ── JSONBin ──
+async function loadFromCloud(){try{const r=await fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':BIN_KEY}});const d=await r.json();return d.record.photos||[];}catch{return[];}}
+async function saveToCloud(arr){try{await fetch(BIN_URL,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':BIN_KEY},body:JSON.stringify({photos:arr})});}catch{}}
+
+// ── MY PHOTOS ──
+function renderMyPhotos(){
+  myPhotos=photos.filter(p=>p.person===currentName);
+  const ci=FAMILY.indexOf(currentName);
+  const color=ci>=0?COLORS[ci]:'var(--accent)';
+  document.getElementById('myBanner').style.background=`linear-gradient(135deg,${color},${COLORS[(ci+2)%COLORS.length]||'#e8a05a'})`;
+  document.getElementById('myBannerTitle').textContent=`${AVATARS[currentName]||'👤'} ${currentName} ki Photos`;
+  document.getElementById('myBannerSub').textContent=`${myPhotos.length} photo${myPhotos.length!==1?'s':''} mili`;
+  document.getElementById('myBannerAvatar').textContent=AVATARS[currentName]||'👤';
+  document.getElementById('downloadAllBtn').style.display=myPhotos.length>0?'block':'none';
+  const grid=document.getElementById('myGrid');grid.innerHTML='';
+  if(!myPhotos.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="em">😕</span><p>Abhi koi photo nahi<br><small>Admin se request karo!</small></p></div>`;}
+  else myPhotos.forEach((p,i)=>{const c=document.createElement('div');c.className='photo-card';c.style.animationDelay=`${i*0.05}s`;c.innerHTML=`<img class="photo-img" src="${p.url}" onclick="openModal('${p.id}')"><div class="photo-bottom"><div class="photo-name">${p.name}</div><div class="photo-meta">${p.date}</div><a href="${p.url}" download="${p.name}" style="background:var(--green);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:600;text-decoration:none;display:inline-block;margin-top:0.3rem;">⬇ Download</a></div>`;grid.appendChild(c);});
+  document.getElementById('myPhotosLoading').style.display='none';
+  document.getElementById('myPhotosContent').style.display='block';
+}
+
+async function downloadAll(){
+  if(!myPhotos.length)return;
+  showToast(`⬇ ${myPhotos.length} photos download ho rahi hain...`);
+  for(let i=0;i<myPhotos.length;i++){try{const r=await fetch(myPhotos[i].url);const b=await r.blob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=myPhotos[i].name||`photo_${i+1}.jpg`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);await new Promise(r=>setTimeout(r,500));}catch{}}
+  showToast('✅ Saari photos download ho gayi!');
+}
+
+function renderPublicGallery(){
+  const grid=document.getElementById('publicGrid');
+  document.getElementById('galleryCount').textContent=photos.length;
+  if(!photos.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="em">🖼️</span><p>Koi photo nahi</p></div>`;return;}
+  grid.innerHTML='';
+  photos.forEach((p,i)=>{const ci=FAMILY.indexOf(p.person);const color=ci>=0?COLORS[ci]:'var(--accent)';const c=document.createElement('div');c.className='photo-card';c.style.animationDelay=`${i*0.05}s`;c.innerHTML=`<img class="photo-img" src="${p.url}" loading="lazy" onclick="openModal('${p.id}')"><div class="photo-bottom">${p.person?`<span class="person-badge" style="background:${color}22;color:${color}">${AVATARS[p.person]||'👤'} ${p.person}</span>`:''}<div class="photo-name">${p.name}</div><div class="photo-meta">${p.date}</div><a href="${p.url}" download="${p.name}" style="background:var(--green);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.72rem;font-weight:600;text-decoration:none;display:inline-block;margin-top:0.3rem;">⬇ Download</a></div>`;grid.appendChild(c);});
+}
+
+function renderUploadGrid(){
+  const grid=document.getElementById('uploadGrid');
+  document.getElementById('uploadCount').textContent=photos.length;
+  if(!photos.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="em">🌅</span><p>Koi photo nahi</p></div>`;return;}
+  grid.innerHTML='';
+  photos.forEach((p,i)=>{const ci=FAMILY.indexOf(p.person);const color=ci>=0?COLORS[ci]:'var(--accent)';const c=document.createElement('div');c.className='photo-card';c.style.animationDelay=`${i*0.05}s`;c.innerHTML=`<img class="photo-img" src="${p.url}" loading="lazy" onclick="openModal('${p.id}')"><div class="photo-bottom"><span class="person-badge" style="background:${color}22;color:${color}">${AVATARS[p.person]||'👤'} ${p.person||'?'}</span><div class="photo-name">${p.name}</div><div class="photo-meta">${p.date}</div><button style="background:transparent;border:1px solid #f0d5d3;color:#c0392b;font-size:0.68rem;padding:0.25rem 0.6rem;border-radius:6px;cursor:pointer;margin-top:0.3rem;" onclick="deletePhoto('${p.id}')">🗑</button></div>`;grid.appendChild(c);});
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('fab').style.display='none';
+  const tabs=document.querySelectorAll('.tab');
+  if(name==='myphotos'){tabs[0].classList.add('active');document.getElementById('myphotosPage').classList.add('active');}
+  else if(name==='gallery'){tabs[1].classList.add('active');document.getElementById('galleryPage').classList.add('active');}
+  else if(name==='upload'){tabs[2].classList.add('active');document.getElementById('uploadPage').classList.add('active');document.getElementById('fab').style.display='flex';renderUploadGrid();}
+}
+
+function downloadGalleryQR(){setTimeout(()=>{const c=document.getElementById('galleryQRBox').querySelector('canvas');if(!c)return;const a=document.createElement('a');a.download='FamilyGallery-QR.png';a.href=c.toDataURL();a.click();showToast('⬇ QR downloaded!');},100);}
+function copyAppLink(btn){navigator.clipboard.writeText(APP_URL).then(()=>{btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='🔗 Link',2000);showToast('✅ Link copied!');});}
+
+async function handleFiles(files){
+  if(!isAdmin)return;
+  const person=document.getElementById('personSelect').value;
+  if(!person){showToast('⚠️ Pehle person select karo!');return;}
+  const arr=[...files].filter(f=>f.type.startsWith('image/'));
+  if(!arr.length)return;
+  const bar=document.getElementById('progressBar'),fill=document.getElementById('progressFill');
+  bar.style.display='block';let done=0;
+  for(const file of arr){
+    showToast(`⬆ Uploading...`);
+    const fd=new FormData();fd.append('file',file);fd.append('upload_preset',UPLOAD_PRESET);
+    try{const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,{method:'POST',body:fd});const d=await r.json();
+      if(d.public_id){photos.unshift({id:d.public_id,name:file.name,url:d.secure_url,person,date:new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),size:file.size>1048576?`${(file.size/1048576).toFixed(1)} MB`:`${Math.round(file.size/1024)} KB`});await saveToCloud(photos);showToast(`✅ Uploaded!`);}
+      else showToast('❌ '+(d.error?.message||'Failed'));
+    }catch(e){showToast('❌ '+e.message);}
+    done++;fill.style.width=`${(done/arr.length)*100}%`;
+  }
+  setTimeout(()=>{bar.style.display='none';fill.style.width='0%';},600);
+  renderUploadGrid();renderPublicGallery();renderMyPhotos();
+  showToast(`🎉 ${done} photos uploaded!`);
+}
+
+async function deletePhoto(id){if(!confirm('Delete?'))return;photos=photos.filter(p=>p.id!==id);await saveToCloud(photos);renderUploadGrid();renderPublicGallery();showToast('🗑 Deleted!');}
+function openModal(id){const p=photos.find(x=>x.id===id);if(!p)return;document.getElementById('modalImg').src=p.url;document.getElementById('modalName').textContent=(p.person?p.person+' — ':'')+p.name;document.getElementById('modalMeta').textContent=p.date+(p.size?' · '+p.size:'');document.getElementById('modalDl').href=p.url;document.getElementById('modalDl').download=p.name;document.getElementById('modal').style.display='flex';}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function showToast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+document.getElementById('uploadZone').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('uploadZone').addEventListener('drop',e=>{e.preventDefault();handleFiles(e.dataTransfer.files);});
+document.getElementById('fileInput').addEventListener('change',e=>{handleFiles(e.target.files);e.target.value='';});
+
+const session=getSession();
+if(session)startApp(session.name,session.isAdmin);
+else showLogin();
+</script>
+</body>
+</html>
